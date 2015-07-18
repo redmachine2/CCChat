@@ -1,7 +1,7 @@
 package org.redmachine;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.*;
+import java.awt.event.*;
 import java.net.ConnectException;
 import java.util.*;
 import java.io.*;
@@ -20,6 +20,7 @@ import javax.swing.*;
 public class XmppManager implements MessageListener{
 
 	XMPPConnection connection;
+    private int lastPosition = 0;
 
 	public void login(String userName, String password) throws XMPPException
 	{
@@ -48,10 +49,49 @@ public class XmppManager implements MessageListener{
 
 		for(RosterEntry r:entries)
 		{
-            panel.add(new JLabel(r.getName()));
+            JLabel friend = new JLabel(r.getName());
+            friend.addMouseListener(new MouseListener() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    JComponent tab1 = makeTextPanel("Talking to " + r.getName());
+                    newTab(r.getName(), tab1);
+                }
+
+                @Override
+                public void mousePressed(MouseEvent e) {
+
+                }
+
+                @Override
+                public void mouseReleased(MouseEvent e) {
+
+                }
+
+                @Override
+                public void mouseEntered(MouseEvent e) {
+
+                }
+
+                @Override
+                public void mouseExited(MouseEvent e) {
+
+                }
+            });
+            panel.add(friend);
 		}
 
 	}
+
+    private void newTab(String title, JComponent component){
+        lastPosition = chatsPane.getTabCount();
+        chatsPane.add(title, new JLabel(title));
+        initTabComponent(lastPosition, component);
+        lastPosition++;
+    }
+    private void initTabComponent(int i, JComponent component){
+        chatsPane.setTabComponentAt(i, new ButtonTabComponent(chatsPane));
+        chatsPane.setComponentAt(i, component);
+    }
 
 	public void disconnect()
 	{
@@ -67,7 +107,9 @@ public class XmppManager implements MessageListener{
 
     private static String username;
     private static char[] password;
-    private static JFrame frame = new JFrame("CCChat");
+    private static JFrame frame = new JFrame("Friends List");
+    private static JFrame chats = new JFrame("Chat Windows");
+    private static JTabbedPane chatsPane = new JTabbedPane();
 
     private static JPanel panel = new JPanel();
     private static JLabel label = new JLabel("Login to CC Chat!");
@@ -118,6 +160,15 @@ public class XmppManager implements MessageListener{
         });
     }
 
+    protected static JComponent makeTextPanel(String text){
+        JPanel panel = new JPanel(false);
+        JLabel filler = new JLabel(text);
+        filler.setHorizontalAlignment(JLabel.CENTER);
+        panel.setLayout(new GridLayout(1, 1));
+        panel.add(filler);
+        return panel;
+    }
+
     private static boolean startXMP(String user, String pass){
         boolean loggedIn = false;
         try {
@@ -141,8 +192,19 @@ public class XmppManager implements MessageListener{
             frame.add(panel2);
             frame.pack();
             frame.setLocationRelativeTo(null);
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
             frame.setVisible(true);
+
+            JPanel openChat = new JPanel();
+            openChat.setLayout(new GridLayout(1, 1));
+
+            openChat.add(chatsPane);
+            chats.add(openChat);
+            chats.setSize(100, 100);
+//            chats.pack();
+            chats.setLocationRelativeTo(frame);
+            chats.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+            chats.setVisible(true);
         }
 
         return loggedIn;
