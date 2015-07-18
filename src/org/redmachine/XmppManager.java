@@ -2,6 +2,7 @@ package org.redmachine;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.net.ConnectException;
 import java.util.*;
 import java.io.*;
 
@@ -22,11 +23,11 @@ public class XmppManager implements MessageListener{
 
 	public void login(String userName, String password) throws XMPPException
 	{
-		ConnectionConfiguration config = new ConnectionConfiguration("im.server.here",5222, "Work");
-		connection = new XMPPConnection(config);
+            ConnectionConfiguration config = new ConnectionConfiguration("redmachine.no-ip.org", 5222, "Work");
+            connection = new XMPPConnection(config);
 
-		connection.connect();
-		connection.login(userName, password);
+            connection.connect();
+            connection.login(userName, password);
 	}
 
 	public void sendMessage(String message, String to) throws XMPPException
@@ -66,27 +67,29 @@ public class XmppManager implements MessageListener{
 
     private static String username;
     private static char[] password;
+    private static JFrame frame = new JFrame("CCChat");
+
+    private static JPanel panel = new JPanel();
+    private static JLabel label = new JLabel("Login to CC Chat!");
+    private static JLabel userLabel = new JLabel("Username");
+    private static JLabel passLabel = new JLabel("Password");
+    private static JButton button = new JButton();
+    private static JTextField userField = new JTextField(20);
+    private static JPasswordField passField = new JPasswordField(20);
+
+    static XmppManager c = new XmppManager();
 
 	public static void main(String args[]) throws XMPPException, IOException {
         // declare variables
-        XmppManager c = new XmppManager();
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
         // turn on the enhanced debugger
         XMPPConnection.DEBUG_ENABLED = false;
 
         JFrame.setDefaultLookAndFeelDecorated(true);
-        JFrame frame = new JFrame("CCChat");
 
-        JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 
-        JLabel label = new JLabel("Login to CC Chat!");
-        JLabel userLabel = new JLabel("Username");
-        JLabel passLabel = new JLabel("Password");
-        JTextField userField = new JTextField(20);
-        JPasswordField passField = new JPasswordField(20);
-        JButton button = new JButton();
         button.setText("Login");
 
         panel.add(label);
@@ -105,34 +108,44 @@ public class XmppManager implements MessageListener{
 
         button.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                System.out.println("Username - " + userField.getText());
-                System.out.println("Password - " + passField.getPassword());
                 String pass = new String(passField.getPassword());
-                c.startXMP(c, userField.getText(), pass, frame);
-                panel.setVisible(false);
+                boolean loggedIn = c.startXMP(userField.getText(), pass);
+                if(loggedIn)
+                    panel.setVisible(false);
+                else
+                    panel.setVisible(true);
             }
         });
     }
 
-    private static void startXMP(XmppManager c,String user, String pass, JFrame frame){
+    private static boolean startXMP(String user, String pass){
+        boolean loggedIn = false;
         try {
+            System.out.println("Logging in");
             c.login(user, pass);
+            System.out.println("after login");
+            loggedIn = true;
         }catch(XMPPException ex){
-            System.out.println(ex);
+            label.setText("Unable to login, try again");
+            loggedIn = false;
         }
 
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.add(new JLabel("Welcome - " + user));
-        panel.add(new JLabel(" "));  //used for poor mans space
-        panel.add(new JLabel("Friends List"));
-        c.displayBuddyList(panel);
+        if(loggedIn) {
+            JPanel panel2 = new JPanel();
+            panel2.setLayout(new BoxLayout(panel2, BoxLayout.Y_AXIS));
+            panel2.add(new JLabel("Welcome - " + user));
+            panel2.add(new JLabel(" "));  //used for poor mans space
+            panel2.add(new JLabel("Friends List"));
+            c.displayBuddyList(panel2);
 
-        frame.add(panel);
-        frame.pack();
-        frame.setLocationRelativeTo(null);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setVisible(true);
+            frame.add(panel2);
+            frame.pack();
+            frame.setLocationRelativeTo(null);
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setVisible(true);
+        }
+
+        return loggedIn;
 
     }
 //
